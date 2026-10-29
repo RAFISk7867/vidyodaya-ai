@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#2563EB" />
+    </linearGradient>
+    <linearGradient id="sunGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#FBBF24" />
+    </linearGradient>
+  </defs>
+  <!-- Background soft squircle -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#primaryGrad)" />
+  
+  <!-- Rising Sun Motif -->
+  <circle cx="24" cy="20" r="7" fill="url(#sunGrad)" opacity="0.9" />
+  <path d="M24 8v3M16 12l2 2.5M32 12l-2 2.5" stroke="#FDE68A" stroke-width="2" stroke-linecap="round" />
+
+  <!-- Open Knowledge Book Wings -->
+  <path d="M12 36c3.5-3 7.5-3.5 12-1.5 4.5-2 8.5-1.5 12 1.5v-12c-3.5-3-7.5-3.5-12-1.5-4.5-2-8.5-1.5-12 1.5v12z" fill="#FFFFFF" fill-opacity="0.95" />
+  <path d="M24 22.5v12" stroke="#4F46E5" stroke-width="2" stroke-linecap="round" />
+
+  <!-- AI Intelligence Spark -->
+  <path d="M38 10l1.2 2.8L42 14l-2.8 1.2L38 18l-1.2-2.8L34 14l2.8-1.2L38 10z" fill="#67E8F9" />
+</svg>
+
