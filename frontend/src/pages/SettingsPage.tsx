@@ -27,7 +27,9 @@ export const SettingsPage: React.FC = () => {
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [geminiStatus, setGeminiStatus] = useState<GeminiStatus | null>(null);
   const [inputApiKey, setInputApiKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gemini-flash-lite-latest');
   const [isUpdatingKey, setIsUpdatingKey] = useState(false);
+  const [isUpdatingModel, setIsUpdatingModel] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isDeletingData, setIsDeletingData] = useState(false);
 
@@ -38,6 +40,9 @@ export const SettingsPage: React.FC = () => {
     try {
       const res = await api.getGeminiStatus();
       setGeminiStatus(res);
+      if (res.model) {
+        setSelectedModel(res.model);
+      }
     } catch {
       // Ignored
     }
@@ -73,7 +78,7 @@ export const SettingsPage: React.FC = () => {
     setSuccess(null);
 
     try {
-      const res = await api.updateGeminiKey(inputApiKey.trim());
+      const res = await api.updateGeminiKey({ gemini_api_key: inputApiKey.trim() });
       setGeminiStatus(res);
       setInputApiKey('');
       setSuccess('Gemini API Key successfully updated! Real AI generation is operational.');
@@ -81,6 +86,23 @@ export const SettingsPage: React.FC = () => {
       setError(err.message || 'Failed to update Gemini API key.');
     } finally {
       setIsUpdatingKey(false);
+    }
+  };
+
+  const handleModelChange = async (newModel: string) => {
+    setSelectedModel(newModel);
+    setIsUpdatingModel(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const res = await api.updateGeminiKey({ model: newModel });
+      setGeminiStatus(res);
+      setSuccess(`AI model switched to ${newModel}. Faster generation is active.`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update model.');
+    } finally {
+      setIsUpdatingModel(false);
     }
   };
 
@@ -163,17 +185,38 @@ export const SettingsPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
-          <p>
-            Current Model:{' '}
-            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-              {geminiStatus?.model || 'gemini-3.8-flash'}
-            </span>
+        <div className="text-xs text-slate-600 dark:text-slate-400 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+            <div>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">
+                Active AI Engine:
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Switch between Ultra-Fast generation or Higher Depth reasoning.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedModel}
+                disabled={isUpdatingModel}
+                onChange={(e) => handleModelChange(e.target.value)}
+                className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold text-indigo-600 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="gemini-flash-lite-latest">⚡ gemini-flash-lite-latest (Ultra Fast / Lowest Latency)</option>
+                <option value="gemini-3.8-flash">🎯 gemini-3.8-flash (High Depth & Examination Essays)</option>
+                <option value="gemini-3.5-flash">📘 gemini-3.5-flash (Standard Balanced)</option>
+              </select>
+              {isUpdatingModel && <span className="text-[11px] text-indigo-500 font-medium animate-pulse">Switching...</span>}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Status: <span className="text-slate-700 dark:text-slate-300">{geminiStatus?.message}</span>
           </p>
-          <p>{geminiStatus?.message}</p>
         </div>
 
-        <form onSubmit={handleUpdateApiKey} className="pt-2 flex flex-col sm:flex-row gap-3">
+        <form onSubmit={handleUpdateApiKey} className="pt-1 flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <input
               type="password"
@@ -193,9 +236,14 @@ export const SettingsPage: React.FC = () => {
             <span>{isUpdatingKey ? 'Updating...' : 'Set API Key'}</span>
           </button>
         </form>
-        <p className="text-[11px] text-slate-400">
-          Keys can also be permanently stored in your <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">backend/.env</code> file as <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">GEMINI_API_KEY</code>.
-        </p>
+
+        <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 text-[11px] text-amber-900 dark:text-amber-300 space-y-1">
+          <p className="font-semibold">⚡ Speed & Latency Tips on Render:</p>
+          <ul className="list-disc list-inside space-y-0.5 text-amber-800/90 dark:text-amber-300/90">
+            <li><strong>Ultra-Fast Model:</strong> Select <code className="bg-amber-100/60 dark:bg-amber-900/40 px-1 py-0.5 rounded font-mono">gemini-flash-lite-latest</code> above for near-instant responses. Thinking token overhead is now disabled by default for 3x speedup.</li>
+            <li><strong>Render Free Tier Cold Starts:</strong> Render puts free instances to sleep after 15 minutes of inactivity. The first request takes 30-50s to wake the container; subsequent requests are fast. Keep it warm 24/7 with a free ping from UptimeRobot to <code className="bg-amber-100/60 dark:bg-amber-900/40 px-1 py-0.5 rounded font-mono">/api/health</code>.</li>
+          </ul>
+        </div>
       </div>
 
       {/* 2. Profile Details */}

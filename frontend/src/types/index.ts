@@ -177,4 +177,5 @@ export interface GeminiStatus {
   is_configured: boolean;
   model: string;
   message: string;
+  available_models?: string[];
 }

@@ -62,8 +62,9 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# Runtime key store allows user to update API key from Settings UI without restarting
+# Runtime key and model store allows user to update API key and model from Settings UI without restarting
 _runtime_gemini_key: Optional[str] = None
+_runtime_gemini_model: Optional[str] = None
 
 def get_effective_gemini_key() -> Optional[str]:
     global _runtime_gemini_key
@@ -77,4 +78,30 @@ def get_effective_gemini_key() -> Optional[str]:
 def set_runtime_gemini_key(new_key: Optional[str]) -> None:
     global _runtime_gemini_key
     _runtime_gemini_key = new_key.strip() if new_key else None
+
+def get_effective_gemini_model() -> str:
+    global _runtime_gemini_model
+    if _runtime_gemini_model:
+        return _runtime_gemini_model
+    env_model = os.getenv("GEMINI_MODEL")
+    if env_model:
+        model = env_model.strip()
+        deprecated = {
+            "gemini-2.5-flash",
+            "models/gemini-2.5-flash",
+            "gemini-1.5-flash",
+            "models/gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "models/gemini-1.5-pro",
+            "gemini-1.0-pro",
+            "models/gemini-1.0-pro"
+        }
+        if model.lower() not in deprecated:
+            return model
+    return settings.effective_gemini_model
+
+def set_runtime_gemini_model(new_model: Optional[str]) -> None:
+    global _runtime_gemini_model
+    if new_model and new_model.strip():
+        _runtime_gemini_model = new_model.strip()
 

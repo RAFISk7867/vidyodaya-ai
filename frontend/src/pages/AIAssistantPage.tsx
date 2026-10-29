@@ -36,6 +36,24 @@ export const AIAssistantPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  const loadingMessages = [
+    'Analyzing academic concept...',
+    'Synthesizing key points & solution...',
+    'Formatting structured examination answer...',
+  ];
+
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStep(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingStep((s) => (s + 1) % 3);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -332,7 +350,9 @@ export const AIAssistantPage: React.FC = () => {
               <Sparkles className="w-4 h-4 animate-spin" />
             </div>
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center gap-2">
-              <span className="font-medium">Vidyodaya AI is preparing your academic answer</span>
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {loadingMessages[loadingStep]}
+              </span>
               <span className="flex gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-bounce" />
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-bounce [animation-delay:0.2s]" />

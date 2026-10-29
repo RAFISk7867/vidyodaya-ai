@@ -227,11 +227,13 @@ export const api = {
   // Settings
   getGeminiStatus: () => request<GeminiStatus>('/settings/gemini-status'),
 
-  updateGeminiKey: (gemini_api_key: string) =>
-    request<GeminiStatus>('/settings/update-api-key', {
+  updateGeminiKey: (params: { gemini_api_key?: string; model?: string } | string) => {
+    const payload = typeof params === 'string' ? { gemini_api_key: params } : params;
+    return request<GeminiStatus>('/settings/update-api-key', {
       method: 'POST',
-      body: JSON.stringify({ gemini_api_key }),
-    }),
+      body: JSON.stringify(payload),
+    });
+  },
 
   updateProfile: (data: { full_name: string }) =>
     request<User>('/settings/profile', {

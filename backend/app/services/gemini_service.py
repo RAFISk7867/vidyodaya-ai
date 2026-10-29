@@ -8,7 +8,7 @@ from google import genai
 from google.genai import types
 from google.genai.errors import APIError
 
-from app.config import settings, get_effective_gemini_key
+from app.config import settings, get_effective_gemini_key, get_effective_gemini_model
 
 logger = logging.getLogger(__name__)
 
@@ -50,20 +50,21 @@ class GeminiService:
         system_instruction: Optional[str] = None,
         temperature: float = 0.7,
         response_mime_type: Optional[str] = None,
-        max_retries: int = 2
+        max_retries: int = 1
     ) -> str:
         """
-        Generates text using Google Gemini with retry and intelligent model failover on quota limits.
+        Generates text using Google Gemini with ultra-low latency optimizations,
+        disabled thinking overhead for speed, and intelligent model failover.
         """
         client = self._get_client()
 
-        # Candidate fallback models in priority order
-        primary_model = settings.effective_gemini_model
+        # Candidate fallback models in priority order: active model first, then ultra-fast flash-lite
+        primary_model = get_effective_gemini_model()
         candidate_models = [
             primary_model,
+            "gemini-flash-lite-latest",
             "gemini-3.8-flash",
             "gemini-3.5-flash",
-            "gemini-flash-lite-latest",
             "gemini-3.5-flash-lite"
         ]
         seen = set()
@@ -74,6 +75,12 @@ class GeminiService:
             config_kwargs["system_instruction"] = system_instruction
         if response_mime_type:
             config_kwargs["response_mime_type"] = response_mime_type
+
+        # Optimize latency: disable thinking tokens overhead (which adds 5-15s delay on newer Gemini models)
+        try:
+            config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=0)
+        except Exception:
+            pass
 
         config = types.GenerateContentConfig(**config_kwargs)
 
@@ -94,6 +101,11 @@ class GeminiService:
                     last_error = e
                     err_msg = (e.message or "").lower()
 
+                    # If model doesn't support thinking_config, remove it and retry immediately
+                    if "thinking" in err_msg and getattr(config, "thinking_config", None):
+                        config.thinking_config = None
+                        continue
+
                     # If model is discontinued, deprecated, not found, or rate limited (429/400/404)
                     # immediately failover to the next candidate model
                     if (
@@ -111,7 +123,7 @@ class GeminiService:
 
                     # Transient 503 error - short wait and retry on same model
                     if e.code == 503 and attempt < max_retries:
-                        time.sleep((attempt + 1) * 1.5)
+                        time.sleep(1.0)
                         continue
 
                     # Other permanent API error

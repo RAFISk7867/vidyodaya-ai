@@ -1,7 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.config import settings, get_effective_gemini_key, set_runtime_gemini_key
+from app.config import (
+    settings,
+    get_effective_gemini_key,
+    set_runtime_gemini_key,
+    get_effective_gemini_model,
+    set_runtime_gemini_model,
+)
 from app.database import get_db
 from app.models.user import User
 from app.models.document import Document
@@ -19,21 +25,25 @@ def get_gemini_status():
     is_set = bool(key and len(key.strip()) > 5)
     return ApiKeyStatusResponse(
         is_configured=is_set,
-        model=settings.effective_gemini_model,
+        model=get_effective_gemini_model(),
         message="Gemini API is configured and operational." if is_set else "Gemini API key is not yet set. Add your key in backend/.env or configure below."
     )
 
 @router.post("/update-api-key", response_model=ApiKeyStatusResponse)
 def update_gemini_api_key(req: ApiKeyUpdateRequest, current_user: User = Depends(get_current_user)):
-    new_key = req.gemini_api_key.strip()
-    if not new_key:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="API key cannot be empty.")
+    if req.gemini_api_key is not None and req.gemini_api_key.strip():
+        new_key = req.gemini_api_key.strip()
+        set_runtime_gemini_key(new_key)
     
-    set_runtime_gemini_key(new_key)
+    if req.model is not None and req.model.strip():
+        set_runtime_gemini_model(req.model.strip())
+
+    key = get_effective_gemini_key()
+    is_set = bool(key and len(key.strip()) > 5)
     return ApiKeyStatusResponse(
-        is_configured=True,
-        model=settings.effective_gemini_model,
-        message="Gemini API key successfully updated for this session."
+        is_configured=is_set,
+        model=get_effective_gemini_model(),
+        message="Gemini settings successfully updated for this session."
     )
 
 @router.put("/profile", response_model=UserResponse)
