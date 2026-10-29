@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     # AI - Google Gemini
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     
     # File Uploads
     MAX_UPLOAD_SIZE_MB: int = 25
@@ -41,6 +41,24 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore"
     )
+
+    @property
+    def effective_gemini_model(self) -> str:
+        model = (self.GEMINI_MODEL or "").strip()
+        # Automatically upgrade deprecated or retired Gemini models
+        deprecated = {
+            "gemini-2.5-flash",
+            "models/gemini-2.5-flash",
+            "gemini-1.5-flash",
+            "models/gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "models/gemini-1.5-pro",
+            "gemini-1.0-pro",
+            "models/gemini-1.0-pro"
+        }
+        if not model or model.lower() in deprecated:
+            return "gemini-3.8-flash"
+        return model
 
 settings = Settings()
 

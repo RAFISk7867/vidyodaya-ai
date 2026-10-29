@@ -19,7 +19,7 @@ def get_gemini_status():
     is_set = bool(key and len(key.strip()) > 5)
     return ApiKeyStatusResponse(
         is_configured=is_set,
-        model=settings.GEMINI_MODEL,
+        model=settings.effective_gemini_model,
         message="Gemini API is configured and operational." if is_set else "Gemini API key is not yet set. Add your key in backend/.env or configure below."
     )
 
@@ -32,7 +32,7 @@ def update_gemini_api_key(req: ApiKeyUpdateRequest, current_user: User = Depends
     set_runtime_gemini_key(new_key)
     return ApiKeyStatusResponse(
         is_configured=True,
-        model=settings.GEMINI_MODEL,
+        model=settings.effective_gemini_model,
         message="Gemini API key successfully updated for this session."
     )
 

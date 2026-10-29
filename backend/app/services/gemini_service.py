@@ -53,10 +53,21 @@ class GeminiService:
         max_retries: int = 2
     ) -> str:
         """
-        Generates text using Google Gemini with retry for transient errors.
+        Generates text using Google Gemini with retry and intelligent model failover on quota limits.
         """
         client = self._get_client()
-        model_name = settings.GEMINI_MODEL
+
+        # Candidate fallback models in priority order
+        primary_model = settings.effective_gemini_model
+        candidate_models = [
+            primary_model,
+            "gemini-3.8-flash",
+            "gemini-3.5-flash",
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash-lite"
+        ]
+        seen = set()
+        models_to_try = [m for m in candidate_models if not (m in seen or seen.add(m))]
 
         config_kwargs: Dict[str, Any] = {"temperature": temperature}
         if system_instruction:
@@ -67,39 +78,54 @@ class GeminiService:
         config = types.GenerateContentConfig(**config_kwargs)
 
         last_error = None
-        for attempt in range(max_retries + 1):
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=config
-                )
-                if not response or not response.text:
-                    raise ValueError("Empty response received from Gemini API.")
-                return response.text.strip()
-            except APIError as e:
-                last_error = e
-                # Check for rate-limiting or server busy
-                if e.code in [429, 503] and attempt < max_retries:
-                    wait_time = (attempt + 1) * 2
-                    logger.warning(f"Gemini transient error ({e.code}). Retrying in {wait_time}s...")
-                    time.sleep(wait_time)
-                    continue
-                logger.error(f"Gemini API Error: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=f"Gemini AI Service Error: {e.message or 'Request failed'}"
-                )
-            except Exception as e:
-                logger.error(f"Unexpected error calling Gemini API: {e}")
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Failed to generate AI response: {str(e)}"
-                )
 
+        for model_name in models_to_try:
+            for attempt in range(max_retries + 1):
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=config
+                    )
+                    if not response or not response.text:
+                        raise ValueError("Empty response received from Gemini API.")
+                    return response.text.strip()
+                except APIError as e:
+                    last_error = e
+                    err_msg = (e.message or "").lower()
+
+                    # If model is discontinued, deprecated, not found, or rate limited (429/400/404)
+                    # immediately failover to the next candidate model
+                    if (
+                        e.code in [400, 404, 429]
+                        or "quota" in err_msg
+                        or "no longer available" in err_msg
+                        or "not supported" in err_msg
+                        or "not found" in err_msg
+                    ):
+                        logger.warning(
+                            f"Model {model_name} unavailable (code {e.code}: {e.message}). "
+                            f"Switching to fallback model in candidate queue..."
+                        )
+                        break  # Break out to next model in models_to_try
+
+                    # Transient 503 error - short wait and retry on same model
+                    if e.code == 503 and attempt < max_retries:
+                        time.sleep((attempt + 1) * 1.5)
+                        continue
+
+                    # Other permanent API error
+                    break
+                except Exception as e:
+                    last_error = e
+                    logger.error(f"Error calling {model_name}: {e}")
+                    break
+
+        # If all candidates exhausted, raise informative error
+        error_msg = getattr(last_error, "message", str(last_error))
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Gemini API temporarily unavailable: {str(last_error)}"
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Gemini AI Service Error: {error_msg}"
         )
 
     def generate_structured_json(

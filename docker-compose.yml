@@ -12,7 +12,7 @@ services:
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SECRET_KEY=${SECRET_KEY:-vidyodaya-super-secret-key-educational-production-2025-ai}
-      - GEMINI_MODEL=gemini-2.5-flash
+      - GEMINI_MODEL=gemini-3.8-flash
       - MAX_UPLOAD_SIZE_MB=25
     volumes:
       - vidyodaya-data:/app/backend/uploads

@@ -45,3 +45,4 @@ EXPOSE 8000
 
 # Start Uvicorn on dynamic PORT environment variable (supports Render, Railway, Cloud Run)
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+

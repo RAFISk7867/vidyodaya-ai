@@ -43,7 +43,7 @@ If you haven't already created a GitHub repository:
 5. Under **Environment Variables**, add:
    - `GEMINI_API_KEY` = `your_gemini_api_key`
    - `SECRET_KEY` = `vidyodaya-super-secret-key-educational-production-2025-ai`
-   - `GEMINI_MODEL` = `gemini-2.5-flash`
+   - `GEMINI_MODEL` = `gemini-3.8-flash`
 6. Click **Deploy Web Service**.
 
 Render will automatically run the multi-stage `Dockerfile`, build the React frontend, package the FastAPI backend, and publish your site at:

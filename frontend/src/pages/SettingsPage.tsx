@@ -167,7 +167,7 @@ export const SettingsPage: React.FC = () => {
           <p>
             Current Model:{' '}
             <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-              {geminiStatus?.model || 'gemini-2.5-flash'}
+              {geminiStatus?.model || 'gemini-3.8-flash'}
             </span>
           </p>
           <p>{geminiStatus?.message}</p>

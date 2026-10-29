@@ -95,7 +95,7 @@ Unlike toy demos, Vidyodaya AI is designed as a SaaS-grade platform with:
 |---|---|
 | **Frontend** | React 18, Vite, TypeScript, Tailwind CSS, Framer Motion, Lucide React, React Router 6, Recharts, React Markdown |
 | **Backend** | Python 3.11+, FastAPI, Uvicorn, Pydantic v2, `pydantic-settings` |
-| **AI Integration** | Google Gemini API (`google-genai` official SDK, default: `gemini-2.5-flash`) |
+| **AI Integration** | Google Gemini API (`google-genai` official SDK, default: `gemini-3.8-flash`) |
 | **PDF Extraction** | PyMuPDF (`pymupdf`) |
 | **Database** | SQLite with SQLAlchemy 2.0 (PostgreSQL-ready schema) |
 | **Security** | PyJWT, Bcrypt password hashing, Bearer Token authentication |
@@ -262,4 +262,3 @@ You have two convenient ways to set your Google Gemini API key:
 
 Created for educational excellence.
 Vidyodaya AI — *Learn Smarter. Rise Higher.*
-
