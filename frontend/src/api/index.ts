@@ -42,6 +42,21 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   });
 
   if (!response.ok) {
+    // If credentials are stale/invalid, clear local token so the app does not remain locked
+    if (response.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/register')) {
+      localStorage.removeItem('vidyodaya_token');
+      localStorage.removeItem('vidyodaya_user');
+      // If user is on an authenticated page, redirect cleanly to login
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.includes('/login') &&
+        !window.location.pathname.includes('/register') &&
+        window.location.pathname !== '/'
+      ) {
+        window.location.href = '/login?expired=1';
+      }
+    }
+
     let errorDetail = 'An error occurred with your request.';
     try {
       const errorJson = await response.json();
