@@ -1,3 +1,13 @@
+---
+title: Vidyodaya AI
+emoji: 🎓
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Vidyodaya AI — Intelligent Generative AI Platform
 
 > **Learn Smarter. Rise Higher.**  
